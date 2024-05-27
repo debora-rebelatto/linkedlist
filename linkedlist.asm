@@ -1,17 +1,29 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # 
 # UFFS - Universidade Federal da Fronteira Sul
 # Ciencia da Computacao
-# Organizacao de Computadores -2024.1
+# Organizacao de Computadores - 2024.1
 # Luciano Lores Caimi
 # Aluna: Debora Rebelatto - 1721101034
 # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 .data
-	menu_text: 		 	.string "\nMenu:\n0. Insere Inteiro\n1. Remove Por Indice\n2. Remove Por Valor\n3. Imprime Lista\n4. Estatisticas\n5. Sair do programa\n\nInsira sua escolha: "
-	not_implemented: 	.string "\nNot implemented yet!\n"
-	invalid_option: 	.string "\nInvalid Option\n"
-	insert_new_value: 	.string "\nDigite um novo valor para inserir na lista:\n"
-	buffer: 			.space 12
+	# Menu
+	menu_text: 		 		.string "\nMenu:\n0. Insere Inteiro\n1. Remove Por Indice\n2. Remove Por Valor\n3. Imprime Lista\n4. Estatisticas\n5. Sair do programa\n\nInsira sua escolha: "
+	
+	# Messages:
+	msg_not_implemented: 	.string "\nNot implemented yet!\n"
+	msg_invalid_option: 	.string "\nOpcao Invalida\n"
+	msg_insert_new_value: 	.string "\nDigite um novo valor para inserir na lista:\n"
+	msg_remove_by_index: 	.string "\nDigite o index do numero a ser removido:\n"
+	msg_remove_by_value: 	.string "\nDigite o valor do numero a ser removido:\n"
+	msg_num_elements: 		.string "\nQuantidade de elementos na lista: "
+	
+	msg_total_added:   		.string "\nTotal de numeros adicionados: "
+	msg_biggest_value: 		.string "\nMaior valor da lista: "
+	msg_smallest_value:		.string "\nMenor valor da lista: "
+	msg_empty_list: 		.string "\nLista vazia\n"
+	
+	# Jumptable to map menu
     jumptable:
 		.word insere_inteiro
         .word remove_indice
@@ -20,18 +32,32 @@
         .word estatistica
         .word exit
 
-listHead: .word 0  # Pointer to the head of the list
-newNode: .word 0, 0  # Memory for a new node (data and next fields)
+	# Pointers to the head of the list and to new node
+	list_head: 		.word 0
+	new_node: 		.word 0, 0
 
-# a0 = endereï¿½o da string a ser impressa nas chamadas do sistema ecall (para saida de texto).
-# a1 = endereï¿½o do buffer onde a entrada do usuario sera armazenada (buffer).
-# a2 = 
-# a7 = 
-
+	# Statistics variables
+	listCount:    .word 0	 # Stores the number of items in the list
+	totalAdded:   .word 0	 # Total number of items added (including removed ones)
+	
+	biggestValue: .word 0  # Initialize to the smallest possible integer
+	smallestValue:.word 2147483647  # Initialize to the largest possible integer
+	
 .text
 initialize_list:
-  la t0, listHead
+  la t0, list_head
   sw x0, 0(t0)
+
+# Initialize the statistics variables
+	la t0, listCount
+	sw x0, 0(t0)   # listCount = 0
+	la t0, totalAdded
+	sw x0, 0(t0)   # totalAdded = 0
+	la t0, biggestValue
+	sw x0, 0(t0)   # biggestValue = 0
+	la t0, smallestValue
+	li t1, 2147483647  # Max int
+	sw t1, 0(t0)   # smallestValue = max int
 
 # menu:
 # Displays the menu to the user
@@ -64,17 +90,16 @@ branch_menu:
 # Displays a message in case the option inserted is invalid
 invalid_menu_option:
 	li a7, 4
-    la a0, invalid_option
+    la a0, msg_invalid_option
     ecall
     j menu
 
 # insere_inteiro:
-# should insert and integer value
+# should insert an integer value
+# and update the statistic values
 insere_inteiro:
-read_int: 
-    # Imprime mensagem solicitando a entrada do usuï¿½rio
     li a7, 4
-    la a0, insert_new_value
+    la a0, msg_insert_new_value
     ecall
 
 	li a7, 5  
@@ -83,35 +108,65 @@ read_int:
 
 	#Allocate memory for the new node
 	li a7, 9
-  li a0, 8 # Size of two words (data and next)
-  ecall
-  mv s0, a0 # Store the address of the new node in s0
+	li a0, 8 # Size of two words (data and next)
+	ecall
+	mv s0, a0 # Store the address of the new node in s0
 
-  # Store data in newNode
-  sw t0, 0(s0)  
+	#Store data in newNode
+	sw t0, 0(s0)  
   
-  # Get the current head 
-  la t2, listHead
-  lw t3, 0(t2)  
-  # Store current head as next in newNode
-  sw t3, 4(s0) 
+	# Get the current head 
+	la t2, list_head
+	lw t3, 0(t2)  
+	# Store current head as next in newNode
+	sw t3, 4(s0) 
 
-  # Update listHead to point to the new node
-  sw s0, 0(t2)   
-  
-  j menu
+	# Update listHead to point to the new node
+	sw s0, 0(t2)   
 
+update_statistics:
+update_list_count:
+    la t1, listCount
+    lw t2, 0(t1)
+    addi t2, t2, 1
+    sw t2, 0(t1)
+
+update_total_added:
+    la t1, totalAdded
+    lw t2, 0(t1)
+    addi t2, t2, 1
+    sw t2, 0(t1)
+
+update_biggest_value:
+    la t1, biggestValue
+    lw t2, 0(t1)
+    blt t0, t2, skipBiggestUpdate  # Branch if new value is smaller
+    sw t0, 0(t1)                    # Otherwise, update biggestValue
+
+    skipBiggestUpdate:
+
+    # Update smallestValue if needed
+    la t1, smallestValue
+    lw t2, 0(t1)
+    bgt t0, t2, skipSmallestUpdate  # Branch if new value is bigger
+    sw t0, 0(t1)                    # Otherwise, update smallestValue
+
+    skipSmallestUpdate:
+    j menu  # Return to the main menu
     
 # remove_indice:
 # removes an value from the list through its index
 remove_indice:
-read_index:
+    li a7, 4
+    la a0, msg_remove_by_index
+    ecall
+
     li a7, 5
     ecall
     mv t0, a0    # t0 = index
 
     # Check if the list is empty
-    la t1, listHead
+    la t1, list_head
     lw t2, 0(t1)
     beqz t2, imprime_lista  # If empty, go back to printList
 
@@ -121,6 +176,7 @@ read_index:
     # Find the node before the one to remove
     mv t3, t2    # t3 = current node
     addi t0, t0, -1  # Decrement index 
+    
 removeLoop:
     beqz t0, foundNode
     lw t3, 4(t3) # Move to next node
@@ -137,7 +193,7 @@ foundNode:
 
 removeHead:
     # Special case: remove the head node
-    la t1, listHead
+    la t1, list_head
     lw t2, 0(t1)  # t2 = head node
     lw t3, 4(t2)  # t3 = next node after head
     sw t3, 0(t1)  # Update listHead to point to the next node
@@ -145,13 +201,16 @@ removeHead:
 
 # remove_valor:
 remove_valor:
-read_value:
+	li a7, 4
+    la a0, msg_remove_by_value
+    ecall
+
     li a7, 5
     ecall
     mv t0, a0    # t0 = value to remove
 
     # Check if the list is empty
-    la t1, listHead
+    la t1, list_head
     lw t2, 0(t1)  # t2 = current node (initially head)
     beqz t2, imprime_lista  # If empty, go back to printList
 
@@ -160,6 +219,7 @@ read_value:
     beq a0, t0, removeHead
 
     # Find the node before the one to remove
+
 removeValueLoop:
     lw t3, 4(t2)  # t3 = next node
     beqz t3, imprime_lista  # Reached end of list without finding the value
@@ -177,48 +237,76 @@ foundValue:
 
 imprime_lista:
  # Print the linked list
-  la t1, listHead
-  lw t2, 0(t1)   # Load head into t2
-  mv t3, t2      # t3 is the current node
+	la t1, list_head
+	lw t2, 0(t1)   # Load head into t2
+	mv t3, t2      # t3 is the current node
   
 printLoop:
   # Check if we've reached the end of the list
-  beqz t3, endPrint
+	beqz t3, print_newline
   
   # Print the data of the current node
-  lw a0, 0(t3) 
-  li a7, 1      # Print integer system call
-  ecall
+	lw a0, 0(t3) 
+	li a7, 1      # Print integer system call
+	ecall
 
   # Print a space for separation
-  li a0, 32      # ASCII code for space
-  li a7, 11     # Print character system call
-  ecall
+	li a0, 32      # ASCII code for space
+	li a7, 11     # Print character system call
+	ecall
 
-  # Move to the next node
-  lw t3, 4(t3)  
-  j printLoop
-
-endPrint:
-  li a0, '\n'     # Newline after printing the list
-  li a7, 11
-  ecall
-  j menu
+	# Move to the next node
+	lw t3, 4(t3)  
+	j printLoop
 
 # estatistica:
 estatistica:
-    j funtion_not_implemented
+print_list_count:
+	li a7, 4
+	la a0, msg_num_elements
+	ecall
 
-# function_not_implemented:
-# While we're still working on some stuff
-# Sorry for the inconvenience
-# Road work ahead
-funtion_not_implemented:
-	li a7, 4               
-    la a0, not_implemented
+	la a0, listCount
+	lw a0, 0(a0)  
+	li a7, 1
+	ecall
+
+print_total_added_items:
+    li a7, 4
+    la a0, msg_total_added
     ecall
-    
-    j menu
+
+    la t0, totalAdded
+    lw a0, 0(t0)
+    li a7, 1
+    ecall
+
+print_biggest_value:
+    li a7, 4
+    la a0, msg_biggest_value
+    ecall
+
+    la t0, biggestValue
+    lw a0, 0(t0)      
+    li a7, 1        
+    ecall
+
+print_smallest_value:
+    li a7, 4
+    la a0, msg_smallest_value 
+    ecall
+
+    la t0, smallestValue 
+    lw a0, 0(t0)
+    li a7, 1
+    ecall
+
+print_newline:
+	li a0, '\n'  
+	li a7, 11
+	ecall
+
+	j menu
 
 exit:
     li a7, 93
