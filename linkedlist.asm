@@ -102,28 +102,51 @@ insere_inteiro:
     la a0, msg_insert_new_value
     ecall
 
-	li a7, 5  
-	ecall
-	mv t0, a0  
+    li a7, 5
+    ecall
+    mv t0, a0  # t0 holds the value to insert
 
-	#Allocate memory for the new node
-	li a7, 9
-	li a0, 8 # Size of two words (data and next)
-	ecall
-	mv s0, a0 # Store the address of the new node in s0
+    # Allocate memory for the new node
+    li a7, 9
+    li a0, 8  # Size of two words (data and next)
+    ecall
+    mv s0, a0  # s0 holds the address of the new node
 
-	#Store data in newNode
-	sw t0, 0(s0)  
-  
-	# Get the current head 
-	la t2, list_head
-	lw t3, 0(t2)  
-	# Store current head as next in newNode
-	sw t3, 4(s0) 
+    # Store data in the new node
+    sw t0, 0(s0)
 
-	# Update listHead to point to the new node
-	sw s0, 0(t2)   
+    # Find the correct position to insert
+    la t1, list_head      # t1 holds the address of list_head
+    lw t2, 0(t1)          # t2 holds the head node
+    mv t3, x0             # t3 is a temporary pointer to track the previous node (initialize to NULL)
 
+insert_loop:
+    beqz t2, insert_at_end  # If the list is empty or we reached the end, insert at the end
+    lw a0, 0(t2)            # Load the value of the current node
+    bge t0, a0, continue_search  # If the new value is greater or equal, continue searching
+
+    # Insert before the current node
+    sw t2, 4(s0)    # Set next of new node to the current node
+    beqz t3, update_head   # If inserting at the beginning, update list_head
+    sw s0, 4(t3)    # Otherwise, update the next of the previous node
+    j update_statistics
+
+continue_search:
+    mv t3, t2     # Update previous node pointer
+    lw t2, 4(t2)  # Move to the next node
+    j insert_loop
+
+insert_at_end:
+    # Insert the new node at the end
+    sw x0, 4(s0)   # Set next of new node to NULL
+    beqz t3, update_head  # If inserting at the beginning, update list_head
+    sw s0, 4(t3)   # Otherwise, update the next of the previous node
+    j update_statistics
+
+update_head:
+    sw s0, 0(t1)  # Update list_head to the new node
+    
+    
 update_statistics:
 update_list_count:
     la t1, listCount
