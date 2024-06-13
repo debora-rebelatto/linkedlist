@@ -13,16 +13,21 @@
 	menu_text: 		 		.string "\nMenu:\n0. Insere Inteiro\n1. Remove Por Indice\n2. Remove Por Valor\n3. Imprime Lista\n4. Estatisticas\n5. Sair do programa\n\nInsira sua escolha: "
 	
 	# Messages:
+	# Errors
 	msg_not_implemented: 	.string "\nNot implemented yet!\n"
 	msg_invalid_option: 	.string "\nOpcao Invalida\n"
+	
+	# Info Prompt
 	msg_insert_new_value: 	.string "\nDigite um novo valor para inserir na lista:\n"
 	msg_remove_by_index: 	.string "\nDigite o index do numero a ser removido:\n"
 	msg_remove_by_value: 	.string "\nDigite o valor do numero a ser removido:\n"
+	
+	# Statistics
 	msg_num_elements: 		.string "\nQuantidade de elementos na lista: "
-
-	msg_total_added:   		.string "\nTotal de numeros adicionados: "
 	msg_biggest_value: 		.string "\nMaior valor da lista: "
 	msg_smallest_value:		.string "\nMenor valor da lista: "
+	msg_total_added:   		.string "\nTotal de numeros adicionados: "
+	msg_total_removed:		.string "\nTotal de numeros removidos: "
 	msg_empty_list: 		.string "\nLista vazia\n"
 	
 	# Jumptable to map menu
@@ -39,11 +44,12 @@
 	new_node: 		.word 0, 0
 
 	# Statistics variables
-	listCount:    .word 0	 # Stores the number of items in the list
-	totalAdded:   .word 0	 # Total number of items added (including removed ones)
-	
-	biggestValue: .word 0  			# Initialize to the smallest possible integer
-	smallestValue:.word 2147483647  # Initialize to the largest possible integer
+	listCount:    	.word 0	
+	totalAdded:   	.word 0
+	totalRemoved:	.word 0
+
+	biggestValue: 	.word 0
+	smallestValue:	.word 2147483647 
 
 .text
 initialize_list:
@@ -53,10 +59,16 @@ initialize_list:
 initialize_statistics:
 	la t0, listCount
 	sw x0, 0(t0)   			# listCount = 0
+	
 	la t0, totalAdded
 	sw x0, 0(t0)   			# totalAdded = 0
+	
+	la t0, totalRemoved
+	sw x0, 0(t0)   			# totalRemoved = 0
+	
 	la t0, biggestValue
 	sw x0, 0(t0)   			# biggestValue = 0
+	
 	la t0, smallestValue
 	li t1, 2147483647  		# Max int
 	sw t1, 0(t0)   			# smallestValue = max int
@@ -149,7 +161,7 @@ insere_inteiro:
     	sw t2, 4(s0)  
     	beqz t3, update_head
     	sw s0, 4(t3) 
-    	j update_statistics
+    	j update_insert_statistics
 
 	continue_search:
 		mv t3, t2   
@@ -157,20 +169,19 @@ insere_inteiro:
 		j insert_loop
 
 	insert_at_end:
-
 		sw x0, 4(s0)   
 		beqz t3, update_head  
 		sw s0, 4(t3)  
-		j update_statistics
+		j update_insert_statistics
 
 	update_head:
 		sw s0, 0(t1) 
 
 ##################################################################
-# update_statistics:
+# update_insert_statistics:
 # When inserting a new value, update the statistics
 ##################################################################
-update_statistics:
+update_insert_statistics:
 update_list_count:
     la t1, listCount
     lw t2, 0(t1)
@@ -201,16 +212,16 @@ skip_smallest_update:
 ##################################################################
 # remove_indice:
 # removes an value from the list through its index
-# Parâmetros recebidos:  
-#   a0: a posição de memória do ponteiro para o inicio da lista;  
+# Parametros recebidos:  
+#   a0: a posicao de memoria do ponteiro para o inicio da lista;  
 #   a1: o indice do elemento da lista a ser removido;  
-# Retorno da função:  
+# Retorno da funcao:  
 #   sucesso: o valor presente na posição removida;  
-#   falha: -1 caso não tenha sido possível remover da lista;  
+#   falha: -1 caso nao tenha sido possivel remover da lista;  
 ##################################################################
 remove_indice:
 read_value_indice:
-  li a7, 4
+	li a7, 4
     la a0, msg_remove_by_index
     ecall
 
@@ -222,40 +233,70 @@ read_value_indice:
     lw t2, 0(t1)
     beqz t2, imprime_lista 
 
-    beqz t0, removeHead
+    beqz t0, remove_head
 
     # Find the node before the one to remove
     mv t3, t2    
     addi t0, t0, -1 
 
-removeLoop:
-    beqz t0, foundNode
+remove_loop:
+    beqz t0, found_node
     lw t3, 4(t3)
     addi t0, t0, -1
-    j removeLoop
+    j remove_loop
 
-foundNode:
+found_node:
     lw t4, 4(t3)
     lw t5, 4(t4)
     sw t5, 4(t3)
-    j imprime_lista  
+    j update_remove_statistics
 
-removeHead:
+remove_head:
     la t1, list_head
-    lw t2, 0(t1) 
-    lw t3, 4(t2) 
-    sw t3, 0(t1)
-    j imprime_lista 
+    lw t2, 0(t1)       # Node to remove
+    lw t5, 0(t2)       # Value of the node to remove (for statistics update)
+    lw t3, 4(t2)       # Next node
+    sw t3, 0(t1)       # Update head to point to next node
+    j update_remove_statistics
+    
+update_remove_statistics:
+update_list_count_removed:
+    la t1, listCount
+    lw t2, 0(t1)
+    addi t2, t2, -1
+    sw t2, 0(t1)
+    
+update_total_removed:
+    la t1, totalRemoved
+    lw t2, 0(t1)
+    addi t2, t2, 1
+    sw t2, 0(t1)
+
+    # Check if removed value was biggest or smallest
+    la t1, biggestValue
+    lw t2, 0(t1)
+    beq t5, t2, update_biggest_after_remove
+    la t1, smallestValue
+    lw t2, 0(t1)
+    beq t5, t2, update_smallest_after_remove
+
+    j imprime_lista  # Skip further updates
+
+update_biggest_after_remove:
+    # ... (Implementation similar to finding biggest in insert)
+
+update_smallest_after_remove:
+    # ... (Implementation similar to finding smallest in insert)
 
 ##################################################################
 # remove_valor:
-# Parâmetros recebidos:  
-# a0: a posição de memória do ponteiro para o inicio da lista;  
+# Parametros recebidos:  
+# a0: a posicao de memoria do ponteiro para o inicio da lista;  
 # a1: o valor a ser removido;  
-# Retorno da função:  
+# Retorno da funcao:  
 #     em caso de sucesso: o indice do elemento removido;  
-#     em caso de falha: -1 caso não tenha sido possível remover da lista;  
-# Funcionalidade: a função deve retirar o primeiro elemento com o valor informado presente nada lista;  
+#     em caso de falha: -1 caso não tenha sido possivel remover da lista;  
+# Funcionalidade: a funcao deve retirar o primeiro elemento com o valor informado presente nada lista;  
 ##################################################################
 remove_valor:
 read_input_value:
@@ -271,8 +312,8 @@ read_input_value:
     lw t2, 0(t1) 
     beqz t2, imprime_lista  
 
-    lw a0, 0(t2
-    beq a0, t0, remove_head
+    lw a0, 0(t2)
+    beq a0, t0, remove_head_valor
 
 remove_value_loop:
     lw t3, 4(t2)  			
@@ -286,25 +327,25 @@ remove_value_loop:
 found_value:
     lw t4, 4(t3) 
     sw t4, 4(t2) 
-    j imprime_lista    
+    j update_remove_statistics
 
-remove_head:
+remove_head_valor:
     la t1, list_head
     lw t2, 0(t1) 
     lw t3, 4(t2) 
     sw t3, 0(t1)
-    j imprime_lista 
+    j update_remove_statistics
 
 ##################################################################
 # imprime_lista
 # Parâmetros recebidos:  
-# a0: a posição de memória do ponteiro para o inicio da lista;  
-# Retorno da função: a função não possui retorno  
-# Funcionalidade: a função deve mostrar na tela todos os elementos presentes na lista;  
+# a0: a posicao de memoria do ponteiro para o inicio da lista;  
+# Retorno da funcao: a funcao nao possui retorno  
+# Funcionalidade: a funcao deve mostrar na tela todos os elementos presentes na lista;  
 ##################################################################
 imprime_lista:
 	la t1, list_head
-	lw t2, 0(t1) 
+	lw t2, 0(t1)
 	mv t3, t2
   
 print_loop:
@@ -324,8 +365,7 @@ print_loop:
 ##################################################################
 # estatistica:
 # prints the values to each recorded statistic
-# Retorno da função: a função não possui retorno  
-# Funcionalidade: mostrar as estatisticas apresentadas acima  
+# Retorno da funcao: a funcao nao possui retorno  
 ##################################################################
 estatistica:
 print_list_count:
@@ -344,6 +384,16 @@ print_total_added_items:
     ecall
 
     la t0, totalAdded
+    lw a0, 0(t0)
+    li a7, 1
+    ecall
+    
+print_total_removed_items:
+    li a7, 4
+    la a0, msg_total_removed
+    ecall
+
+    la t0, totalRemoved
     lw a0, 0(t0)
     li a7, 1
     ecall
