@@ -1,5 +1,7 @@
 # Linked List
 
+## Coisas que ainda tem pra fazer:
+https://docs.google.com/document/d/1dLtS9po-r8FnZLCKgbh1AXrOMelFwrw4VVEcsL4THmw/edit
 
 Descrição:
 
@@ -40,12 +42,6 @@ A função main a qual deve conter um menu com o acesso as seguintes funcionalid
 
 6. **Sair do programa**
    - [x] Encerra a execução do programa.
-
-**TODO**
-Valores de estatísticas não estão sendo atualizados na remoção de elementos  
-Não está retornando 1 ou -1 como retorno das funções
-
-A função main deve ler do teclado os valores a serem passados como parâmetro para as funções. Por exemplo, para inserir um valor na lista, ainda dentro da função main deve-se ler o valor inteiro, que então será passado como parámetro para a função insere inteiro.
 
 Segue a descrição detalhada de cada uma das funções a serem implementadas pelo programa:
 
