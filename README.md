@@ -14,25 +14,36 @@ Cada posição da lista ocupa 8 bytes, onde 4 bytes são usados para armazenar o
 O programa deve ser implementado utilizando o conjunto de instruções do processador RISC-V e deve ser executado no simulador RARS.  
 
 A função main a qual deve conter um menu com o acesso as seguintes funcionalidades  
-1) Inserir elemento na lista  
-A função deve alocar memória e inserir o elemento de forma ordenada na lista.  
-2) Remover elemento da lista por indice  
-A função deve remover o elemento de acordo com sua posição (indice) na  
-lista. Considerar que os indice começa em 0 (zero).  
-3) Remover elemento da lista por valor  
-A função deve remover da lista apenas o primeiro elemento encontrado com o valor recebido pela função.  
-4) Mostra todos os elementos da lista  
-Imprime na tela todos os elementos presentes na lista.  
-5) Mostra estatísticas  
-Imprime na tela as seguintes informações: 
-- quantidade de elementos presentes na lista; 
-- maior valor presente na lista;  
-- menor valor presente na lista;  
-- quantidade de inserções realizadas;   
-- quantidade de remoções realizadas;  
 
-6) Sair do programa  
-Encerra a execução do programa.  
+## Lista de Funcionalidades
+
+1. **Inserir elemento na lista**
+   - [x] A função deve alocar memória e inserir o elemento de forma ordenada na lista.
+
+2. **Remover elemento da lista por índice**
+   - [x] A função deve remover o elemento de acordo com sua posição (índice) na lista. 
+   - [x] Considerar que os índices começam em 0 (zero).
+
+3. **Remover elemento da lista por valor**
+   - [x] A função deve remover da lista apenas o primeiro elemento encontrado com o valor recebido pela função.
+
+4. **Mostrar todos os elementos da lista**
+   - [x] Imprime na tela todos os elementos presentes na lista.
+
+5. **Mostrar estatísticas**
+   - [ ] Imprime na tela as seguintes informações:
+     - [ ] Quantidade de elementos presentes na lista
+     - [ ] Maior valor presente na lista
+     - [ ] Menor valor presente na lista
+     - [ ] Quantidade de inserções realizadas
+     - [ ] Quantidade de remoções realizadas
+
+6. **Sair do programa**
+   - [x] Encerra a execução do programa.
+
+**TODO**
+Valores de estatísticas não estão sendo atualizados na remoção de elementos  
+Não está retornando 1 ou -1 como retorno das funções
 
 A função main deve ler do teclado os valores a serem passados como parâmetro para as funções. Por exemplo, para inserir um valor na lista, ainda dentro da função main deve-se ler o valor inteiro, que então será passado como parámetro para a função insere inteiro.
 

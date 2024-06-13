@@ -129,7 +129,7 @@ insere_inteiro:
 		ecall
 		mv t0, a0
 
-	allocate_mem:
+	malloc:
     	li a7, 9
     	li a0, 8 
     	ecall
@@ -168,6 +168,7 @@ insere_inteiro:
 
 ##################################################################
 # update_statistics:
+# When inserting a new value, update the statistics
 ##################################################################
 update_statistics:
 update_list_count:
@@ -200,6 +201,12 @@ skip_smallest_update:
 ##################################################################
 # remove_indice:
 # removes an value from the list through its index
+# Parâmetros recebidos:  
+#   a0: a posição de memória do ponteiro para o inicio da lista;  
+#   a1: o indice do elemento da lista a ser removido;  
+# Retorno da função:  
+#   sucesso: o valor presente na posição removida;  
+#   falha: -1 caso não tenha sido possível remover da lista;  
 ##################################################################
 remove_indice:
 read_value_indice:
@@ -242,6 +249,13 @@ removeHead:
 
 ##################################################################
 # remove_valor:
+# Parâmetros recebidos:  
+# a0: a posição de memória do ponteiro para o inicio da lista;  
+# a1: o valor a ser removido;  
+# Retorno da função:  
+#     em caso de sucesso: o indice do elemento removido;  
+#     em caso de falha: -1 caso não tenha sido possível remover da lista;  
+# Funcionalidade: a função deve retirar o primeiro elemento com o valor informado presente nada lista;  
 ##################################################################
 remove_valor:
 read_input_value:
@@ -283,6 +297,10 @@ remove_head:
 
 ##################################################################
 # imprime_lista
+# Parâmetros recebidos:  
+# a0: a posição de memória do ponteiro para o inicio da lista;  
+# Retorno da função: a função não possui retorno  
+# Funcionalidade: a função deve mostrar na tela todos os elementos presentes na lista;  
 ##################################################################
 imprime_lista:
 	la t1, list_head
@@ -306,6 +324,8 @@ print_loop:
 ##################################################################
 # estatistica:
 # prints the values to each recorded statistic
+# Retorno da função: a função não possui retorno  
+# Funcionalidade: mostrar as estatisticas apresentadas acima  
 ##################################################################
 estatistica:
 print_list_count:
