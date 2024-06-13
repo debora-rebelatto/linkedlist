@@ -38,7 +38,7 @@ A função main deve ler do teclado os valores a serem passados como parâmetro 
 
 Segue a descrição detalhada de cada uma das funções a serem implementadas pelo programa:
 
-**int insere inteiro (int *head, int valor)**  
+**int insere\_inteiro (int \*head, int valor)**
 Parâmetros recebidos:  
 a0: a posição de memória do ponteiro para o inicio da lista;  
 a1: o valor a ser inserido;  
@@ -48,7 +48,7 @@ em caso de falha: -1 caso não tenha sido possível inserir na lista;
 Funcionalidade: a função deve alocar memória (usar ecall) e inserir o elemento de forma ordenada na lista;  
 
 
-**int remove por indice (int *head, int indice)**  
+**int remove\_por\_indice (int \*head, int indice)**
 Parâmetros recebidos:  
 a0: a posição de memória do ponteiro para o inicio da lista;  
 a1: o indice do elemento da lista a ser removido;  
@@ -57,7 +57,7 @@ em caso de sucesso: o valor presente na posição removida;
 em caso de falha: -1 caso não tenha sido possível remover da lista;  
 Funcionalidade: a função deve retirar o elemento que esteja no indice informado;  
 
-**int remove por valor (int *head, int valor)**  
+**int remove\_por\_valor (int \*head, int valor)**
 Parâmetros recebidos:  
 a0: a posição de memória do ponteiro para o inicio da lista;  
 a1: o valor a ser removido;  
@@ -66,7 +66,7 @@ Retorno da função:
     em caso de falha: -1 caso não tenha sido possível remover da lista;  
 Funcionalidade: a função deve retirar o primeiro elemento com o valor informado presente nada lista;  
 
-**void imprime lista (int *head)**  
+**void imprime\_lista (int \*head)**
 Parâmetros recebidos:  
 a0: a posição de memória do ponteiro para o inicio da lista;  
 Retorno da função: a função não possui retorno  
