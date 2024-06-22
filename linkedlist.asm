@@ -11,7 +11,7 @@
 .data
 	# Menu
 	menu_text: 		 		.string "\nMenu:\n0. Insere Inteiro\n1. Remove Por Indice\n2. Remove Por Valor\n3. Imprime Lista\n4. Estatisticas\n5. Sair do programa\n\nInsira sua escolha: "
-	
+
 	# Messages:
 	# Errors
 	msg_not_implemented: 	.string "\nNot implemented yet!\n"
@@ -53,11 +53,11 @@
 
 .text
 initialize_list:
-  la t0, list_head
-  sw x0, 0(t0)
+    la t0, list_head
+    sw x0, 0(t0)
 
 initialize_statistics:
-	la t0, listCount
+    la t0, listCount
 	sw x0, 0(t0)   			# listCount = 0
 	
 	la t0, totalAdded
@@ -70,7 +70,6 @@ initialize_statistics:
 	sw x0, 0(t0)   			# biggestValue = 0
 	
 	la t0, smallestValue
-	li t1, 2147483647  		# Max int
 	sw t1, 0(t0)   			# smallestValue = max int
 
 ##################################################################
@@ -128,7 +127,7 @@ invalid_menu_option:
 #	a0: sucesso = 1
 #		falha 	= -1
 #
-#	a1: sucesso = 1
+#	a1: sucesso = o indice da posicao inserida
 #		falha 	= -1
 ##################################################################
 insere_inteiro:
@@ -211,17 +210,17 @@ skip_smallest_update:
     
 ##################################################################
 # remove_indice:
-# removes an value from the list through its index
+# removes a value from the list through its index
 # Parametros recebidos:  
 #   a0: a posicao de memoria do ponteiro para o inicio da lista;  
 #   a1: o indice do elemento da lista a ser removido;  
 # Retorno da funcao:  
-#   sucesso: o valor presente na posição removida;  
+#   sucesso: o valor presente na posicao removida;  
 #   falha: -1 caso nao tenha sido possivel remover da lista;  
 ##################################################################
 remove_indice:
 read_value_indice:
-	li a7, 4
+    li a7, 4
     la a0, msg_remove_by_index
     ecall
 
@@ -231,42 +230,37 @@ read_value_indice:
 
     la t1, list_head
     lw t2, 0(t1)
-    beqz t2, imprime_lista 
+    beqz t2, imprime_lista # List is empty
 
-    beqz t0, remove_head
-
-    # Find the node before the one to remove
-    mv t3, t2    
-    addi t0, t0, -1 
+    mv t3, x0    # t3 will be the previous node pointer
 
 remove_loop:
-    beqz t0, found_node
-    lw t3, 4(t3)
-    addi t0, t0, -1
+    beqz t2, not_found # If t2 is zero, we didn't find the node
+    beqz t0, found_node # If t0 is zero, we've found the node to remove
+    addi t0, t0, -1 # Decrease the index
+    mv t3, t2 # Move t3 to current node
+    lw t2, 4(t2) # Move to next node
     j remove_loop
 
 found_node:
-    lw t4, 4(t3)
-    lw t5, 4(t4)
-    sw t5, 4(t3)
+    lw t4, 4(t2) # Get the next node of the node to be removed
+    lw t5, 0(t2) # Get the value of the node to be removed
+    beqz t3, update_head_remove_index # If t3 is zero, we are removing the head
+    sw t4, 4(t3) # Otherwise, link the previous node to the next node
     j update_remove_statistics
 
-remove_head:
-    la t1, list_head
-    lw t2, 0(t1)       # Node to remove
-    lw t5, 0(t2)       # Value of the node to remove (for statistics update)
-    lw t3, 4(t2)       # Next node
-    sw t3, 0(t1)       # Update head to point to next node
-    j update_remove_statistics
-    
+update_head_remove_index:
+    sw t4, 0(t1) # Update the head to the next node
+
+not_found:
+    j imprime_lista
+
 update_remove_statistics:
-update_list_count_removed:
     la t1, listCount
     lw t2, 0(t1)
     addi t2, t2, -1
     sw t2, 0(t1)
     
-update_total_removed:
     la t1, totalRemoved
     lw t2, 0(t1)
     addi t2, t2, 1
@@ -275,18 +269,37 @@ update_total_removed:
     # Check if removed value was biggest or smallest
     la t1, biggestValue
     lw t2, 0(t1)
-    beq t5, t2, update_biggest_after_remove
+    beq t5, t2, update_biggest_after_remove_index
     la t1, smallestValue
     lw t2, 0(t1)
-    beq t5, t2, update_smallest_after_remove
+    beq t5, t2, update_smallest_after_remove_index
 
-    j imprime_lista  # Skip further updates
+    j menu
 
-update_biggest_after_remove:
-    # ... (Implementation similar to finding biggest in insert)
+update_biggest_after_remove_index:
+    la t1, list_head
+    lw t2, 0(t1)
+    li t3, -2147483648 # Minimum possible value
 
-update_smallest_after_remove:
-    # ... (Implementation similar to finding smallest in insert)
+find_new_biggest_remove_index:
+    beqz t2, update_biggest_done_remove_index
+    lw t4, 0(t2)
+    blt t3, t4, update_biggest_value_remove_index
+    lw t2, 4(t2)
+    j find_new_biggest_remove_index
+
+update_biggest_value_remove_index:
+    mv t3, t4
+    lw t2, 4(t2)
+    j find_new_biggest_remove_index
+
+update_biggest_done_remove_index:
+    la t1, biggestValue
+    sw t3, 0(t1)
+    j menu
+
+update_smallest_after_remove_index:
+	# ...Implementation similar to finding smallest in insert)
 
 ##################################################################
 # remove_valor:
@@ -295,7 +308,7 @@ update_smallest_after_remove:
 # a1: o valor a ser removido;  
 # Retorno da funcao:  
 #     em caso de sucesso: o indice do elemento removido;  
-#     em caso de falha: -1 caso não tenha sido possivel remover da lista;  
+#     em caso de falha: -1 caso n�o tenha sido possivel remover da lista;  
 # Funcionalidade: a funcao deve retirar o primeiro elemento com o valor informado presente nada lista;  
 ##################################################################
 remove_valor:
@@ -338,8 +351,8 @@ remove_head_valor:
 
 ##################################################################
 # imprime_lista
-# Parâmetros recebidos:  
-# a0: a posicao de memoria do ponteiro para o inicio da lista;  
+# Parametros recebidos:  
+# a0: a posicao de memoria do ponteiro para o inicio da lista;
 # Retorno da funcao: a funcao nao possui retorno  
 # Funcionalidade: a funcao deve mostrar na tela todos os elementos presentes na lista;  
 ##################################################################
@@ -410,7 +423,7 @@ print_biggest_value:
 
 print_smallest_value:
     li a7, 4
-    la a0, msg_smallest_value 
+    la a0, msg_smallest_value
     ecall
 
     la t0, smallestValue 
