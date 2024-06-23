@@ -11,7 +11,7 @@
 .data
 	# Menu
 	menu_text: 		 		.string "\nMenu:\n0. Insere Inteiro\n1. Remove Por Indice\n2. Remove Por Valor\n3. Imprime Lista\n4. Estatisticas\n5. Sair do programa\n\nInsira sua escolha: "
-
+	
 	# Messages:
 	# Errors
 	msg_not_implemented: 	.string "\nNot implemented yet!\n"
@@ -70,6 +70,7 @@ initialize_statistics:
 	sw x0, 0(t0)   			# biggestValue = 0
 	
 	la t0, smallestValue
+	li t1, 2147483647  		# Max int
 	sw t1, 0(t0)   			# smallestValue = max int
 
 ##################################################################
@@ -83,7 +84,7 @@ menu:
 
     li a7, 5
 	ecall
-	
+
 ##################################################################
 # menu_input_validation:
 # Validates if the value is above 0 and not above 5
@@ -211,12 +212,12 @@ skip_smallest_update:
 ##################################################################
 # remove_indice:
 # removes a value from the list through its index
-# Parametros recebidos:  
-#   a0: a posicao de memoria do ponteiro para o inicio da lista;  
-#   a1: o indice do elemento da lista a ser removido;  
-# Retorno da funcao:  
-#   sucesso: o valor presente na posicao removida;  
-#   falha: -1 caso nao tenha sido possivel remover da lista;  
+# Parametros recebidos:
+#   a0: a posicao de memoria do ponteiro para o inicio da lista;
+#   a1: o indice do elemento da lista a ser removido;
+# Retorno da funcao:
+#   sucesso: o valor presente na posicao removida;
+#   falha: -1 caso nao tenha sido possivel remover da lista;
 ##################################################################
 remove_indice:
 read_value_indice:
@@ -226,90 +227,97 @@ read_value_indice:
 
     li a7, 5
     ecall
-    mv t0, a0    # t0 = index
+    mv t0, a0
 
     la t1, list_head
     lw t2, 0(t1)
-    beqz t2, imprime_lista # List is empty
+    beqz t2, imprime_lista 
 
-    mv t3, x0    # t3 will be the previous node pointer
+    mv t3, x0
 
 remove_loop:
-    beqz t2, not_found # If t2 is zero, we didn't find the node
-    beqz t0, found_node # If t0 is zero, we've found the node to remove
-    addi t0, t0, -1 # Decrease the index
-    mv t3, t2 # Move t3 to current node
-    lw t2, 4(t2) # Move to next node
+    beqz t0, found_node
+    addi t0, t0, -1
+    mv t3, t2
+    lw t2, 4(t2)
     j remove_loop
 
 found_node:
-    lw t4, 4(t2) # Get the next node of the node to be removed
-    lw t5, 0(t2) # Get the value of the node to be removed
-    beqz t3, update_head_remove_index # If t3 is zero, we are removing the head
-    sw t4, 4(t3) # Otherwise, link the previous node to the next node
+    lw t4, 4(t2)
+    lw t5, 0(t2)
+    beqz t3, update_head_remove_index
+    sw t4, 4(t3)
     j update_remove_statistics
 
 update_head_remove_index:
     sw t4, 0(t1) # Update the head to the next node
 
-not_found:
-    j imprime_lista
-
+##################################################################
+# update_remove_statistics
+##################################################################
 update_remove_statistics:
-    la t1, listCount
-    lw t2, 0(t1)
-    addi t2, t2, -1
-    sw t2, 0(t1)
-    
-    la t1, totalRemoved
-    lw t2, 0(t1)
-    addi t2, t2, 1
-    sw t2, 0(t1)
+	update_list_count_removal:
+        la t0, listCount
+        lw t1, 0(t0)
+        addi t1, t1, -1
+        sw t1, 0(t0)
 
-    # Check if removed value was biggest or smallest
+        li a7, 4
+		la a0, msg_num_elements
+		ecall
+
+		la a0, listCount
+		lw a0, 0(a0)  
+		li a7, 1
+		ecall
+
+	update_list_total_removed:
+        la t1, totalRemoved
+		lw t2, 0(t1)
+		addi t2, t2, 1
+		sw t2, 0(t1)
+
+	update_total_biggest_smallest__values:
+        la t1, listCount
+        lw t1, 0(t1)
+        beqz t1, empty_list_after_remove
+
+		la t1, list_head
+        lw t2, 0(t1)
+
+        update_smallest_value:
+            lw t3, 0(t2)
+            la t4, smallestValue
+            sw t3, 0(t4)
+
+        find_last_node:
+            lw t3, 4(t2)
+            beqz t3, update_biggest_done_remove
+            mv t2, t3
+            j find_last_node
+
+        update_biggest_done_remove:
+            lw t3, 0(t2)
+            la t4, biggestValue
+            sw t3, 0(t4)
+            j menu
+
+empty_list_after_remove:
     la t1, biggestValue
-    lw t2, 0(t1)
-    beq t5, t2, update_biggest_after_remove_index
-    la t1, smallestValue
-    lw t2, 0(t1)
-    beq t5, t2, update_smallest_after_remove_index
-
-    j menu
-
-update_biggest_after_remove_index:
-    la t1, list_head
-    lw t2, 0(t1)
-    li t3, -2147483648 # Minimum possible value
-
-find_new_biggest_remove_index:
-    beqz t2, update_biggest_done_remove_index
-    lw t4, 0(t2)
-    blt t3, t4, update_biggest_value_remove_index
-    lw t2, 4(t2)
-    j find_new_biggest_remove_index
-
-update_biggest_value_remove_index:
-    mv t3, t4
-    lw t2, 4(t2)
-    j find_new_biggest_remove_index
-
-update_biggest_done_remove_index:
-    la t1, biggestValue
-    sw t3, 0(t1)
-    j menu
-
-update_smallest_after_remove_index:
-	# ...Implementation similar to finding smallest in insert)
+    sw x0, 0(t1)
+    la t1, smallestValue    
+    sw x0, 0(t1)           
+    j menu  
 
 ##################################################################
 # remove_valor:
-# Parametros recebidos:  
-# a0: a posicao de memoria do ponteiro para o inicio da lista;  
+# Parametros recebidos:
+# a0: a posicao de memoria do ponteiro para o inicio da lista;
 # a1: o valor a ser removido;  
 # Retorno da funcao:  
 #     em caso de sucesso: o indice do elemento removido;  
-#     em caso de falha: -1 caso n�o tenha sido possivel remover da lista;  
-# Funcionalidade: a funcao deve retirar o primeiro elemento com o valor informado presente nada lista;  
+#     em caso de falha: -1 caso nao tenha sido possivel remover da lista;
+# Funcionalidade: a funcao deve retirar o primeiro elemento com o valor informado presente nada lista;
 ##################################################################
 remove_valor:
 read_input_value:
@@ -354,13 +362,13 @@ remove_head_valor:
 # Parametros recebidos:  
 # a0: a posicao de memoria do ponteiro para o inicio da lista;
 # Retorno da funcao: a funcao nao possui retorno  
-# Funcionalidade: a funcao deve mostrar na tela todos os elementos presentes na lista;  
+# Funcionalidade: a funcao deve mostrar na tela todos os elementos presentes na lista;
 ##################################################################
 imprime_lista:
 	la t1, list_head
 	lw t2, 0(t1)
 	mv t3, t2
-  
+
 print_loop:
 	beqz t3, print_newline
 
