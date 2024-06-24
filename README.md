@@ -33,12 +33,12 @@ A função main a qual deve conter um menu com o acesso as seguintes funcionalid
    - [x] Imprime na tela todos os elementos presentes na lista.
 
 5. **Mostrar estatísticas**
-   - [ ] Imprime na tela as seguintes informações:
-     - [ ] Quantidade de elementos presentes na lista
-     - [ ] Maior valor presente na lista
-     - [ ] Menor valor presente na lista
-     - [ ] Quantidade de inserções realizadas
-     - [ ] Quantidade de remoções realizadas
+   - [x] Imprime na tela as seguintes informações:
+     - [x] Quantidade de elementos presentes na lista
+     - [x] Maior valor presente na lista
+     - [x] Menor valor presente na lista
+     - [x] Quantidade de inserções realizadas
+     - [x] Quantidade de remoções realizadas
 
 6. **Sair do programa**
    - [x] Encerra a execução do programa.
