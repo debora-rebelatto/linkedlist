@@ -386,21 +386,30 @@ imprime_lista:
 	la t1, list_head
 	lw t2, 0(t1)
 	mv t3, t2
+	
+check_empty:
+    beqz t3, empty_list
 
 print_loop:
 	beqz t3, print_newline
 
 	lw a0, 0(t3) 
-	li a7, 1 
+	li a7, 1
 	ecall
 
-	li a0, 32  
+	li a0, 32
 	li a7, 11
 	ecall
 
 	lw t3, 4(t3)  
 	j print_loop
-
+	
+empty_list:
+	li a7, 4
+	la a0, msg_empty_list
+	ecall
+	j menu
+	
 ##################################################################
 # estatistica:
 # prints the values to each recorded statistic
