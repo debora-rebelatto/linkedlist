@@ -132,69 +132,71 @@ invalid_menu_option:
 #		falha 	= -1
 ##################################################################
 insere_inteiro:
-	read_value_insert:
-    	li a7, 4
-		la a0, msg_insert_new_value
-		ecall
+    read_value_insert:
+        li a7, 4
+        la a0, msg_insert_new_value
+        ecall
 
-		li a7, 5
-		ecall
-		mv t0, a0
+        li a7, 5
+        ecall
+        mv t0, a0
 
-	malloc:
-    	li a7, 9
-    	li a0, 8 
-    	ecall
-    	mv s0, a0
-	
-    	sw t0, 0(s0)
+    malloc:
+        li a7, 9
+        li a0, 8 
+        ecall
+        bnez a0, malloc_success
+        li a0, -1
+        li a1, -1
+        j insere_inteiro_end
 
-    	la t1, list_head    
-    	lw t2, 0(t1) 
-    	mv t3, x0         
+    malloc_success:
+        mv s0, a0
+        sw t0, 0(s0)
 
-	insert_loop:
-    	beqz t2, insert_at_end 
-    	lw a0, 0(t2)       
-    	bge t0, a0, continue_search
+        la t1, list_head    
+        lw t2, 0(t1) 
+        mv t3, x0         
 
-    	sw t2, 4(s0)  
-    	beqz t3, update_head
-    	sw s0, 4(t3) 
-    	j update_insert_statistics
+    insert_loop:
+        beqz t2, insert_at_end 
+        lw a0, 0(t2)       
+        bge t0, a0, continue_search
 
-	continue_search:
-		mv t3, t2   
-		lw t2, 4(t2) 
-		j insert_loop
+        sw t2, 4(s0)  
+        beqz t3, update_head
+        sw s0, 4(t3) 
+        j update_insert_statistics
 
-	insert_at_end:
-		sw x0, 4(s0)   
-		beqz t3, update_head  
-		sw s0, 4(t3)  
-		j update_insert_statistics
+    continue_search:
+        mv t3, t2   
+        lw t2, 4(t2) 
+        j insert_loop
 
-	update_head:
-		sw s0, 0(t1) 
+    insert_at_end:
+        sw x0, 4(s0)   
+        beqz t3, update_head  
+        sw s0, 4(t3)  
+        j update_insert_statistics
+
+    update_head:
+        sw s0, 0(t1) 
 
 ##################################################################
 # update_insert_statistics:
 # When inserting a new value, update the statistics
 ##################################################################
 update_insert_statistics:
-update_list_count:
     la t1, listCount
     lw t2, 0(t1)
     addi t2, t2, 1
     sw t2, 0(t1)
 
-update_total_added:
     la t1, totalAdded
     lw t2, 0(t1)
     addi t2, t2, 1
     sw t2, 0(t1)
 
-update_biggest_value:
     la t1, biggestValue
     lw t2, 0(t1)
     blt t0, t2, skip_biggest_update  
@@ -207,8 +209,13 @@ skip_biggest_update:
     sw t0, 0(t1)
 
 skip_smallest_update:
-    j menu 
-    
+    li a0, 1            
+    mv a1, t3         
+    j insere_inteiro_end
+
+insere_inteiro_end:
+    j menu
+
 ##################################################################
 # remove_indice:
 # removes a value from the list through its index
@@ -231,7 +238,7 @@ read_value_indice:
 
     la t1, list_head
     lw t2, 0(t1)
-    beqz t2, imprime_lista 
+    beqz t2, fail_remove_indice
 
     mv t3, x0
 
@@ -240,6 +247,7 @@ remove_loop:
     addi t0, t0, -1
     mv t3, t2
     lw t2, 4(t2)
+    beqz t2, fail_remove_indice
     j remove_loop
 
 found_node:
@@ -247,67 +255,67 @@ found_node:
     lw t5, 0(t2)
     beqz t3, update_head_remove_index
     sw t4, 4(t3)
+    mv a0, t5
     j update_remove_statistics
 
 update_head_remove_index:
-    sw t4, 0(t1) # Update the head to the next node
+    sw t4, 0(t1)
+    mv a0, t5
+    j update_remove_statistics
+
+fail_remove_indice:
+    li a0, -1
+    li a1, -1
+    j remove_indice_end
+
+remove_indice_end:
+    j menu
 
 ##################################################################
 # update_remove_statistics
+# When removing an value, update the statistics
 ##################################################################
 update_remove_statistics:
-	update_list_count_removal:
-        la t0, listCount
-        lw t1, 0(t0)
-        addi t1, t1, -1
-        sw t1, 0(t0)
+    la t0, listCount
+    lw t1, 0(t0)
+    addi t1, t1, -1
+    sw t1, 0(t0)
 
-        li a7, 4
-		la a0, msg_num_elements
-		ecall
+    la t1, totalRemoved
+    lw t2, 0(t1)
+    addi t2, t2, 1
+    sw t2, 0(t1)
 
-		la a0, listCount
-		lw a0, 0(a0)  
-		li a7, 1
-		ecall
+    la t1, listCount
+    lw t1, 0(t1)
+    beqz t1, empty_list_after_remove
 
-	update_list_total_removed:
-        la t1, totalRemoved
-		lw t2, 0(t1)
-		addi t2, t2, 1
-		sw t2, 0(t1)
+    la t1, list_head
+    lw t2, 0(t1)
 
-	update_total_biggest_smallest__values:
-        la t1, listCount
-        lw t1, 0(t1)
-        beqz t1, empty_list_after_remove
+update_smallest_value:
+    lw t3, 0(t2)
+    la t4, smallestValue
+    sw t3, 0(t4)
 
-		la t1, list_head
-        lw t2, 0(t1)
+find_last_node:
+    lw t3, 4(t2)
+    beqz t3, update_biggest_done_remove
+    mv t2, t3
+    j find_last_node
 
-        update_smallest_value:
-            lw t3, 0(t2)
-            la t4, smallestValue
-            sw t3, 0(t4)
-
-        find_last_node:
-            lw t3, 4(t2)
-            beqz t3, update_biggest_done_remove
-            mv t2, t3
-            j find_last_node
-
-        update_biggest_done_remove:
-            lw t3, 0(t2)
-            la t4, biggestValue
-            sw t3, 0(t4)
-            j menu
+update_biggest_done_remove:
+    lw t3, 0(t2)
+    la t4, biggestValue
+    sw t3, 0(t4)
+    j menu
 
 empty_list_after_remove:
     la t1, biggestValue
     sw x0, 0(t1)
     la t1, smallestValue    
-    sw x0, 0(t1)           
-    j menu  
+    sw x0, 0(t1)
+    j menu
 
 ##################################################################
 # remove_valor:
@@ -321,7 +329,7 @@ empty_list_after_remove:
 ##################################################################
 remove_valor:
 read_input_value:
-	li a7, 4
+    li a7, 4
     la a0, msg_remove_by_value
     ecall
 
@@ -331,31 +339,41 @@ read_input_value:
 
     la t1, list_head
     lw t2, 0(t1) 
-    beqz t2, imprime_lista  
+    beqz t2, fail_remove_valor
 
     lw a0, 0(t2)
     beq a0, t0, remove_head_valor
 
 remove_value_loop:
-    lw t3, 4(t2)  			
-    beqz t3, imprime_lista  
-    lw a0, 0(t3)  		
-    beq a0, t0, found_value 
+    lw t3, 4(t2)
+    beqz t3, fail_remove_valor
+    lw a0, 0(t3)
+    beq a0, t0, found_value
 
-    mv t2, t3     	
+    mv t2, t3
     j remove_value_loop
 
 found_value:
-    lw t4, 4(t3) 
-    sw t4, 4(t2) 
+    lw t4, 4(t3)
+    sw t4, 4(t2)
+    mv a1, t3
+    li a0, 1
     j update_remove_statistics
 
 remove_head_valor:
-    la t1, list_head
-    lw t2, 0(t1) 
-    lw t3, 4(t2) 
+    lw t3, 4(t2)
     sw t3, 0(t1)
+    mv a1, x0
+    li a0, 1
     j update_remove_statistics
+
+fail_remove_valor:
+    li a0, -1
+    li a1, -1
+    j remove_valor_end
+
+remove_valor_end:
+    j menu
 
 ##################################################################
 # imprime_lista
